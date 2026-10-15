@@ -1,0 +1,30 @@
+{
+  "menu_count": 3220,
+  "ingredient_rows": 22384,
+  "unique_ingredients": 1382,
+  "fooddb_exact_match_count": 1382,
+  "reviewed_mvp_ingredient_names": 73,
+  "mapping_grade_counts": {
+    "A": 34,
+    "B": 25,
+    "C": 13,
+    "R": 1
+  },
+  "strict_menu_items_default_pantry": 36,
+  "strict_menu_role_counts": {
+    "국/찌개": 18,
+    "주메뉴": 9,
+    "밥": 6,
+    "반찬": 3
+  },
+  "meal_options_broad": 2916,
+  "latest_champrice_date": "2026-08-28",
+  "price_catalog_entries": 38,
+  "에너지_complete_menus": 3220,
+  "단백질_complete_menus": 3198,
+  "칼슘_complete_menus": 3178,
+  "철_complete_menus": 3184,
+  "나트륨_complete_menus": 2949,
+  "all5_complete_menus": 2929,
+  "all5_complete_pct": 91.0
+}
