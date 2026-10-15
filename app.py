@@ -9,84 +9,69 @@ logger=logging.getLogger('budget_meal')
 
 st.set_page_config(page_title='bowlly | 나만의 주간 식단', page_icon='🥗', layout='wide')
 
-st.markdown('<style>' + (Path(__file__).resolve().parent / 'ui_launch.css').read_text(encoding='utf-8') + '</style>', unsafe_allow_html=True)
+st.markdown('<style>' + (Path(__file__).resolve().parent / 'ui_editorial.css').read_text(encoding='utf-8') + '</style>', unsafe_allow_html=True)
 
 pool, ing, prices, options, audit, pmeta = load_data()
 
 st.markdown('''
-<div class="brandbar"><div class="brand-id"><span class="brand-mark">🍽️</span> bowlly<small>한끼가 쉬워지는 순간</small></div><div class="brand-beta">✦ NEW · WEEKLY PLANNER</div></div>
+<div class="brandbar"><div class="logo"><span class="logo-mark">b.</span>bowlly</div>
+<div class="brand-right"><span>좋은 한 끼를 위한 작은 계획</span><b>WEEKLY MEAL PLANNER</b></div></div>
 <div class="hero">
-  <div class="hero-copy">
-    <div class="hero-eyebrow">✨ 이번 주도 맛있게, 가볍게</div>
-    <h1>예산은 알뜰하게,<br><em>한 끼는 근사하게!</em></h1>
-    <p>식단 고민은 덜고, 맛있는 시간은 더하고.<br>내 예산과 영양 조건에 맞춰 식단부터 장보기까지 한 번에 준비해요.</p>
-    <div class="hero-pills"><span>💸 예산 맞춤</span><span>🥗 영양 필터</span><span>🛒 장보기 리스트</span></div>
+  <div class="hero-content">
+    <div class="hero-kicker">WHAT'S ON YOUR TABLE?</div>
+    <h1>장보기는 가볍게.<br><em>식탁은 더 풍성하게.</em></h1>
+    <p>이번 주, 뭘 먹을지 고민하지 마세요.<br>내 예산에 맞는 식단부터 필요한 장보기 목록까지,<br>한 번에 준비해 드려요.</p>
+    <div class="hero-chips"><span>✦ 예산 맞춤</span><span>✦ 영양 기준</span><span>✦ 장보기 리스트</span></div>
   </div>
-  <div class="hero-art" aria-hidden="true">
-    <div class="hero-circle"></div><div class="hero-plate">🥗</div>
-    <div class="float-note first">🛒 예상 장보기비<strong>예산에 꼭 맞게</strong></div>
-    <div class="float-note second">💚 MY MEAL PLAN<strong>맛있게 완성!</strong></div>
-    <div class="sparkle one">✳</div><div class="sparkle two">✦</div>
+  <div class="hero-media" aria-hidden="true"><div class="hero-photo"></div>
+   <div class="hero-bubble one">🌱 오늘의 선택<strong>든든하고 알뜰하게</strong></div>
+   <div class="hero-bubble two">🛒 나만의 장보기<strong>필요한 만큼만</strong></div>
+   <div class="hero-star">✳</div>
   </div>
 </div>
 ''',unsafe_allow_html=True)
 
-st.markdown(
-    '<div class="notice">💡 <span><b>알려드려요.</b> 공공데이터 기반 예상 장보기 비용으로, 실제 마트 결제액과 차이가 있을 수 있어요. '
-    '정확하게 연결된 가격만 사용하고 이미 집에 있는 재료는 구매비에서 제외해요.</span></div>',
-    unsafe_allow_html=True)
+st.markdown('<div class="introline"><h2>우리 집 이번 주 식단 만들기</h2><span>세 가지만 입력하면 시작할 수 있어요.</span></div>',unsafe_allow_html=True)
 
-with st.sidebar:
-    st.markdown('<div class="sidebar-brand"><div class="mark">🍓</div><div><strong>bowlly</strong><span>YOUR WEEKLY MEAL MATE</span></div></div>',unsafe_allow_html=True)
-    st.markdown('### 🌟 나만의 식단 설정')
-    st.markdown('<div class="sidebar-help">이번 주 예산부터 차근차근 정해볼까요?</div>',unsafe_allow_html=True)
-    budget=st.number_input('장보기 예산 (원)',min_value=5000,max_value=200000,value=30000,step=1000,format='%d')
-    meal_count=st.slider('이번 주 몇 끼?',3,7,5)
-    household=st.slider('함께 먹는 인원',1,4,1)
-    st.divider()
-    st.markdown('### 🥑 영양 취향 맞추기')
-    min_kcal=st.slider('최소 kcal',300,700,400,50)
-    max_kcal=st.slider('최대 kcal',500,1000,850,50)
-    min_protein=st.slider('최소 단백질(g)',5,40,15,1)
-    max_sodium=st.slider('최대 나트륨(mg)',1000,3000,2000,100)
-    st.caption('※ 공식 1끼 권고값이 아니라 사용자가 조정하는 MVP 필터입니다.')
-    st.divider()
-    st.markdown('### 🧺 이미 있는 재료')
-    pantry=st.multiselect(
-        '이번 장보기에서 제외할 재료',
-        options=DEFAULT_PANTRY,
-        default=DEFAULT_PANTRY,
-        help='보유했다고 선택한 재료는 구매가격 매핑 등급과 관계없이 이번 장보기 비용에서 제외합니다.'
-    )
-    st.caption('기본값은 쌀·양념류를 이미 보유한 주간 장보기 시나리오입니다.')
-    run=st.button('🍽️ 내 식단 추천받기',use_container_width=True,type='primary')
+st.markdown('<div class="planner-card"><div class="planner-heading"><strong>🍽️ 내 식단에 맞게 설정하기</strong><span>STEP 01 · START HERE</span></div></div>',unsafe_allow_html=True)
+# 기본 입력은 메인 화면. 계산은 기존 core.plan_week 그대로 사용.
+with st.form('meal_planner_form', clear_on_submit=False):
+    col_budget,col_count,col_house=st.columns([1.35,1,1])
+    with col_budget:
+        budget=st.number_input('장보기 예산 (원)',min_value=5000,max_value=200000,value=30000,step=1000,format='%d')
+    with col_count:
+        meal_count=st.select_slider('식사 횟수',options=[3,4,5,6,7],value=5)
+    with col_house:
+        household=st.select_slider('인원 수',options=[1,2,3,4],value=1)
+    with st.expander('⚙️ 영양 조건 및 보유재료 맞춤 설정 (선택)'):
+        st.caption('원하는 한 끼 영양 범위와 이미 집에 있는 재료를 설정하세요. 모두 선택 사항입니다.')
+        col_min,col_max=st.columns(2)
+        with col_min:
+            min_kcal=st.slider('최소 열량(kcal)',300,700,400,50)
+            min_protein=st.slider('최소 단백질(g)',5,40,15,1)
+        with col_max:
+            max_kcal=st.slider('최대 열량(kcal)',500,1000,850,50)
+            max_sodium=st.slider('최대 나트륨(mg)',1000,3000,2000,100)
+        pantry=st.multiselect('집에 있는 기본재료 (장보기에서 제외)',options=DEFAULT_PANTRY,default=DEFAULT_PANTRY)
+        st.caption('선택한 재료는 보유 중이라고 가정합니다. 영양 조건은 의료·영양 처방 기준이 아닙니다.')
+    run=st.form_submit_button('🍽️ 이 조건으로 식단 만들기 →',use_container_width=True,type='primary')
+st.markdown('<div class="tiny-note">🔒 회원가입 필요 없음 · 공공 데이터 기반 예상 가격 · 2026년 자료</div>',unsafe_allow_html=True)
 
 if not run:
-    st.markdown('<div class="section">bowlly와 함께, 딱 세 단계 🍓</div>',unsafe_allow_html=True)
     st.markdown('''
-    <div class="steps-grid">
-      <div class="step-card a"><span class="step-num">01</span><div class="step-icon">💸</div><strong>예산부터 정해요</strong><p>이번 주 얼마나 쓸지, 몇 명이 몇 끼 먹을지 입력해주세요.</p></div>
-      <div class="step-card b"><span class="step-num">02</span><div class="step-icon">🥑</div><strong>내 취향을 담아요</strong><p>칼로리와 영양 기준, 이미 집에 있는 재료를 골라요.</p></div>
-      <div class="step-card c"><span class="step-num">03</span><div class="step-icon">🛍️</div><strong>맛있는 한 주 완성</strong><p>추천 식단과 예상 장보기 비용, 구매 목록까지 확인해요!</p></div>
+    <div class="feature-strip">
+     <div class="feature a"><span class="number">01 / SMART BUDGET</span><span class="icon">💸</span><strong>예산에 맞게</strong><p>장보기 예산부터 정하고 그 안에서 식단을 찾아요.</p></div>
+     <div class="feature b"><span class="number">02 / BALANCED MEALS</span><span class="icon">🥬</span><strong>영양도 꼼꼼하게</strong><p>열량·단백질 등 원하는 조건에 맞춰 메뉴를 골라요.</p></div>
+     <div class="feature c"><span class="number">03 / EASY SHOPPING</span><span class="icon">🛍️</span><strong>장보기까지 한 번에</strong><p>중복 재료를 모아서 살 것만 확인할 수 있어요.</p></div>
     </div>
-    <div class="trust-strip"><strong>🔎 확인된 데이터로 추천해요</strong><div>영양 계산 가능 <span>91.0%</span> &nbsp;·&nbsp; 엄격 가격검증 <span>36개 메뉴</span></div></div>
     ''',unsafe_allow_html=True)
-    with st.expander('📊 데이터 출처와 가격 계산 기준 자세히 보기'):
-        c1,c2,c3,c4=st.columns(4)
-        c1.metric('검토한 메뉴',f"{audit['menu_count']:,}개")
-        c2.metric('영양정보 완성률',f"{audit['all5_complete_pct']:.1f}%")
-        c3.metric('엄격 가격검증 메뉴',f"{audit['strict_menu_items_default_pantry']}개")
-        c4.metric('식단 조합 후보',f"{audit['meal_options_broad']:,}개")
-        st.markdown('''
-        **데이터 출처**: 메뉴젠 · 국가표준식품성분DB 10.4 · KAMIS · 참가격
-
-        - **A**: 동일 품목 가격만 구매비 계산에 사용
-        - **B**: 조리 상태·단위 변환에 추가 근거 필요 → 구매비 계산 제외
-        - **C**: 다른 품종·상품의 대체가격 → 구매비 계산 제외
-        - **R**: 조리수 0원처럼 별도로 명시한 계산 규칙
-
-        KAMIS는 품목·품종·단위·등급별 고정된 한 행을 사용하고, 참가격은 2026-08-28 조사된 동일상품 비세일·비1+1 가격의 중앙값을 사용합니다.
-        ''')
+    with st.expander('🔍 데이터 출처·검증 기준 확인하기'):
+        col1,col2,col3=st.columns(3)
+        col1.metric('원자료 메뉴',f"{audit['menu_count']:,}개")
+        col2.metric('영양 5종 계산 가능',f"{audit['all5_complete_pct']:.1f}%")
+        col3.metric('엄격 검증 메뉴',f"{audit['strict_menu_items_default_pantry']}개")
+        st.markdown('**출처:** 메뉴젠 · 국가표준식품성분DB 10.4 · KAMIS · 한국소비자원 참가격. '
+                    '동일 품목과 직접 연결된 A등급 가격만 구매비 계산에 사용하고, 추가 근거가 필요한 B등급·대체품 C등급 가격은 제외합니다.')
 else:
     try:
         with st.spinner('가격·영양 조건을 확인하며 식단을 계산하고 있어요…'):
@@ -106,12 +91,12 @@ else:
         title='이번 주 식단 완성! 🎉' if within else '조건에 맞는 식단을 찾았어요'
         tagline=f'{meal_count}끼 · {household}인 기준 · 공공가격 기반 예상비용'
         st.markdown(f'''
-        <div class="result-banner"><span class="pre">YOUR WEEKLY MEAL PLAN</span>
+        <div class="result-hero"><span class="overline">YOUR WEEKLY PLAN IS READY</span>
         <h2>{title}</h2><p>{tagline}</p></div>
-        <div class="stats-grid">
-          <div class="stat-card cost"><span class="label">🛒 예상 장보기비</span><strong>{r['total_cost']:,.0f}원</strong><small>공공가격 기준</small></div>
-          <div class="stat-card left"><span class="label">💰 남는 예산</span><strong>{remain:,.0f}원</strong><small>설정 예산 {budget:,.0f}원</small></div>
-          <div class="stat-card options"><span class="label">✨ 검토한 후보 조합</span><strong>{r['candidate_count']:,}개</strong><small>조건에 맞춰 비교했어요</small></div>
+        <div class="overview-grid">
+         <div class="overview-card one"><span class="label">🛒 예상 장보기비</span><strong>{r['total_cost']:,.0f}원</strong><small>공공가격 기준 예상액</small></div>
+         <div class="overview-card two"><span class="label">💰 남는 예산</span><strong>{remain:,.0f}원</strong><small>입력 예산 {budget:,.0f}원</small></div>
+         <div class="overview-card three"><span class="label">✨ 비교 후보</span><strong>{r['candidate_count']:,}개</strong><small>최적화 대상 조합</small></div>
         </div>
         ''',unsafe_allow_html=True)
         st.progress(min(1.0, max(0.0, r['total_cost'] / budget)), text=f"예산 사용률 {r['total_cost'] / budget * 100:.1f}% · 공공가격 기준 예상비용")
@@ -127,12 +112,12 @@ else:
             for i,m in enumerate(r['selected'],1):
                 with cols[(i-1)%3]:
                     st.markdown(f'''
-                    <div class="meal t{i%4}">
-                      <div class="meal-top"><div class="no">MEAL {i:02d}</div><div class="meal-icon">{['🍲','🥗','🍜','🍚'][i%4]}</div></div>
-                      <div class="name">{html.escape(str(m['meal_name']))}</div>
-                      <span class="chip">🔥 {m['kcal']:.0f} kcal</span>
-                      <span class="chip">💪 단백질 {m['protein_g']:.1f}g</span>
-                      <span class="chip">🧂 Na {m['sodium_mg']:.0f}mg</span>
+                    <div class="meal-card">
+                      <div class="meal-head"><span class="meal-index">MEAL {i:02d}</span><span class="meal-emoji">{['🍲','🥗','🍜','🍚'][i%4]}</span></div>
+                      <div class="meal-name">{html.escape(str(m['meal_name']))}</div>
+                      <div class="nutri-tags"><span>🔥 {m['kcal']:.0f} kcal</span>
+                      <span>단백질 {m['protein_g']:.1f}g</span>
+                      <span>Na {m['sodium_mg']:.0f}mg</span></div>
                     </div>''',unsafe_allow_html=True)
             st.caption('영양값은 메뉴젠 재료중량 × 국가표준식품성분DB 10.4의 100g당 값을 합산한 결과입니다.')
         with t2:
@@ -162,4 +147,4 @@ else:
             st.write('- KAMIS의 1kg·100g 등은 실제 최소 포장단위로 간주하지 않고 **중량 기준 예상비용**으로만 계산합니다.')
             st.write('- 기대효과 20%·30%·50% 등의 수치는 아직 사용자 실증 전이므로 **성과값으로 표시하지 않습니다.**')
 
-st.markdown('<div class="app-footer"><div><b>bowlly.</b> SMALL BUDGET, HAPPY TABLE.</div><div>공공데이터 기반 식단·장보기 MVP · 예상 가격은 실제 결제액과 다를 수 있어요.</div></div>',unsafe_allow_html=True)
+st.markdown('<div class="footer"><div><b>bowlly.</b> GOOD FOOD, SMART BUDGET.</div><div>2026 공공데이터 기반 · 실제 구매가격은 다를 수 있습니다.</div></div>',unsafe_allow_html=True)
