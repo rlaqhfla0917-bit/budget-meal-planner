@@ -22,7 +22,7 @@ pool, ing, prices, options, audit, pmeta = load_data()
 
 # Only browser-local storage is used. No cross-user shared server JSON or session data.
 local_storage = LocalStorage()
-raw_saved = local_storage.getItem(HISTORY_KEY, key='bowlly_history_read')
+raw_saved = local_storage.getItem(HISTORY_KEY)
 if 'history' not in st.session_state:
     st.session_state.history = []
 if 'history_loaded' not in st.session_state:
