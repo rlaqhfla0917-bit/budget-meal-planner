@@ -2,3 +2,4 @@ streamlit>=1.35,<2
 pandas>=2.0,<3
 numpy>=1.26,<3
 scipy>=1.11,<2
+streamlit-local-storage>=0.0.23,<1
