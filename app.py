@@ -2,6 +2,8 @@ import html
 import json
 import logging
 from pathlib import Path
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 from urllib.parse import quote
 
 import pandas as pd
@@ -11,6 +13,7 @@ from core import load_data, plan_week, DEFAULT_PANTRY
 from ui_helpers import (
     HISTORY_KEY, create_record, history_json, mark_purchased,
     meal_parts, read_history, merge_history, recipe_search_url,
+    meal_dates, record_dates, item_key, toggle_item, shopping_progress,
 )
 
 logger = logging.getLogger('bowlly')
@@ -20,22 +23,78 @@ st.markdown('<style>' + (Path(__file__).parent / 'ui_dashboard.css').read_text(e
 
 pool, ing, prices, options, audit, pmeta = load_data()
 
-# Only browser-local storage is used. No cross-user shared server JSON or session data.
-local_storage = LocalStorage()
-raw_saved = local_storage.getItem(HISTORY_KEY)
+# Browser-local storage only: no shared server-side records or identifiers.
 if 'history' not in st.session_state:
     st.session_state.history = []
 if 'history_loaded' not in st.session_state:
     st.session_state.history_loaded = False
+if 'history_write_counter' not in st.session_state:
+    st.session_state.history_write_counter = 0
+
+local_storage = None
+raw_saved = None
+try:
+    local_storage = LocalStorage()
+    raw_saved = local_storage.getItem(HISTORY_KEY)
+except Exception:
+    logger.exception('브라우저 저장소 초기화 실패; 현재 세션으로 계속 진행합니다.')
+
 if raw_saved is not None and not st.session_state.history_loaded:
     st.session_state.history = merge_history(st.session_state.history, raw_saved)
     st.session_state.history_loaded = True
 
 
 def store_history(records):
+    """Keep session state current even if browser storage is unavailable."""
     st.session_state.history = read_history(records)
     st.session_state.history_loaded = True
-    local_storage.setItem(HISTORY_KEY, history_json(st.session_state.history), key='bowlly_history_write')
+    if local_storage is None:
+        st.warning('브라우저 저장 기능에 접근하지 못했습니다. JSON으로 백업해 주세요.')
+        return
+    try:
+        # The Streamlit custom component has a unique key per write, so every
+        # add/check/delete action actually reaches the browser, not cached UI.
+        st.session_state.history_write_counter += 1
+        write_key = f'bowlly_history_write_{st.session_state.history_write_counter}'
+        local_storage.setItem(HISTORY_KEY, history_json(st.session_state.history), key=write_key)
+    except Exception:
+        logger.exception('브라우저 기록 저장 실패')
+        st.warning('저장에 실패할 수 있습니다. 아래 JSON 백업을 다운로드해 주세요.')
+
+
+def calendar_html(items, start, days=7):
+    """Read-only calendar; escaped to avoid user-provided HTML injection."""
+    if isinstance(start, str):
+        start = date.fromisoformat(start)
+    by_date = {}
+    for day, meal in items:
+        by_date.setdefault(day, []).append(meal)
+    week = ['월', '화', '수', '목', '금', '토', '일']
+    cards = []
+    for i in range(days):
+        d = start + timedelta(days=i)
+        key = d.isoformat()
+        found = by_date.get(key, [])
+        texts = ''.join(
+            '<div class="day-meal"><b>' + html.escape(str(x.get('name3') or x.get('name1') or '식사')) + '</b>'
+            '<small>' + html.escape(str(x.get('name2') or '')) + '</small></div>'
+            for x in found
+        ) or '<div class="day-empty">＋ 식단 없음</div>'
+        cards.append(
+            f'<div class="day-cell {"planned" if found else ""}">'
+            f'<span class="day-week">{week[d.weekday()]}</span>'
+            f'<strong>{d.day}</strong>{texts}</div>'
+        )
+    return '<div class="weekly-calendar">' + ''.join(cards) + '</div>'
+
+
+def record_calendar(rec):
+    return list(zip(record_dates(rec), rec.get('meals', [])))
+
+
+def update_record(record_id, updated):
+    store_history([updated if row['id'] == record_id else row
+                   for row in st.session_state.history])
 
 
 def food_picture(index=0):
@@ -82,7 +141,7 @@ records = st.session_state.history
 st.markdown('''<div class="shell-top"><div class="wordmark"><span>✳</span> bowlly.</div>
   <div class="top-note">나의 작은 식탁 다이어리 &nbsp; ✦ &nbsp; BUDGET MEAL PLANNER</div></div>''', unsafe_allow_html=True)
 
-navigation = st.segmented_control('메뉴', ['🏠 홈', '🍽️ 이번 주 식단', '🛒 장보기 기록', '📒 내 기록'], default='🏠 홈', label_visibility='collapsed')
+navigation = st.segmented_control('메뉴', ['🏠 홈', '🍽️ 이번 주 식단', '🗓️ 주간 캘린더', '🛒 장보기 기록', '📒 내 기록'], default='🏠 홈', label_visibility='collapsed')
 
 st.markdown('''<div class="welcome"><div>
   <span class="eyebrow">GOOD FOOD, LITTLE MOMENTS</span>
@@ -110,6 +169,7 @@ if navigation in ['🏠 홈', '🍽️ 이번 주 식단']:
                         max_sodium=st.slider('최대 나트륨(mg)',1000,3000,2000,100)
                     pantry = st.multiselect('이미 보유한 재료', DEFAULT_PANTRY, default=DEFAULT_PANTRY)
                     st.caption('선택한 재료는 구매비에서 제외해요. 영양 기준은 의료·영양 처방이 아닙니다.')
+                plan_start = st.date_input('첫 식사 날짜', value=datetime.now(ZoneInfo('Asia/Seoul')).date(), format='YYYY/MM/DD')
                 submit = st.form_submit_button('✨ 이번 주 식단 추천받기', type='primary', use_container_width=True)
         st.markdown('''<div class="info-row"><div><span>01</span> 예산 입력</div><div><span>02</span> 식단 추천</div><div><span>03</span> 기록 저장</div></div>''', unsafe_allow_html=True)
     with sidecol:
@@ -129,6 +189,7 @@ if navigation in ['🏠 홈', '🍽️ 이번 주 식단']:
             st.session_state.budget = budget
             st.session_state.meal_count = meal_count
             st.session_state.household = household
+            st.session_state.plan_start = plan_start
             st.session_state.saved_result_id = None
         except ValueError as exc:
             st.warning(str(exc))
@@ -149,14 +210,19 @@ if navigation in ['🏠 홈', '🍽️ 이번 주 식단']:
           <div><span>추천 끼니</span><strong>{len(result['selected'])}끼</strong></div></div>''', unsafe_allow_html=True)
         if not result['within_budget']:
             st.warning('설정한 예산을 초과해요. 현재 조건에서 가장 저렴한 대안을 보여드립니다.')
-        st.markdown('<div class="section-subtitle">밥 · 국/찌개 · 주메뉴 · 반찬을 한 상에 담았어요.</div>',unsafe_allow_html=True)
+        st.markdown('<div class="section-head"><h2>🗓️ 내 식단 캘린더</h2><span>WEEKLY CALENDAR</span></div>', unsafe_allow_html=True)
+        start_date = st.session_state.get('plan_start', datetime.now(ZoneInfo('Asia/Seoul')).date())
+        dated_meals = list(zip(meal_dates(start_date, len(result['selected'])), result['selected']))
+        st.markdown(calendar_html(dated_meals, start_date), unsafe_allow_html=True)
+        st.caption('첫 식사 날짜부터 1일 1끼 기준으로 임시 배치했어요. 날짜별 기록은 저장 후 내 기록에서 확인할 수 있어요.')
+        st.markdown('<div class="section-subtitle">밥 · 국/찌개 · 주메뉴 · 반찬을 한 상에 담았어요.</div>', unsafe_allow_html=True)
         cards = st.columns(2)
         for i,meal in enumerate(result['selected']):
             with cards[i%2]:show_meal(meal,i)
         a,b=st.columns([1,1])
         with a:
             if st.button('💗 날짜별 식단 기록에 저장', use_container_width=True, type='primary', disabled=bool(st.session_state.get('saved_result_id'))):
-                record=create_record(result,st.session_state.budget,st.session_state.household,st.session_state.meal_count)
+                record=create_record(result,st.session_state.budget,st.session_state.household,st.session_state.meal_count,start_date=st.session_state.get("plan_start", datetime.now(ZoneInfo("Asia/Seoul")).date()))
                 store_history([record]+st.session_state.history)
                 st.session_state.saved_result_id=record['id']
                 st.success(f"{record['created_at']} 식단을 이 브라우저에 저장했어요!")
@@ -164,8 +230,25 @@ if navigation in ['🏠 홈', '🍽️ 이번 주 식단']:
             st.download_button('⬇️ 내 식단 JSON 백업',json.dumps(result['selected'],ensure_ascii=False,default=str,indent=2),file_name='bowlly_meals.json',mime='application/json',use_container_width=True)
         st.markdown('<div class="section-head"><h2>이렇게 장보세요 🧺</h2><span>GROCERY LIST</span></div>',unsafe_allow_html=True)
         show_shopping(json.loads(result['shopping'].to_json(orient='records',force_ascii=False)))
+        st.caption('✅ 품목별 체크리스트는 위 식단을 저장한 뒤 ‘장보기 기록’에서 사용할 수 있어요.')
     elif submit:
         st.warning('지금 조건에는 가능한 식단이 없어요. 영양 범위를 넓히거나 보유재료 조건을 변경해 주세요.')
+
+if navigation == '🗓️ 주간 캘린더':
+    st.markdown('<div class="section-head"><h2>🗓️ 이번 주 식탁</h2><span>MY WEEKLY CALENDAR</span></div>', unsafe_allow_html=True)
+    selected_week = st.date_input('확인할 주', value=datetime.now(ZoneInfo('Asia/Seoul')).date(), key='calendar_week')
+    monday = selected_week - timedelta(days=selected_week.weekday())
+    sunday = monday + timedelta(days=6)
+    entries = []
+    for rec in st.session_state.history:
+        for d, meal in record_calendar(rec):
+            if monday.isoformat() <= d <= sunday.isoformat():
+                entries.append((d, meal))
+    st.caption(f'{monday:%Y.%m.%d} — {sunday:%Y.%m.%d} · 저장된 식단 기준')
+    st.markdown(calendar_html(entries, monday), unsafe_allow_html=True)
+    if not entries:
+        st.info('이 주에는 저장된 식단이 없어요. 홈에서 식단을 생성하고 날짜별로 저장해 주세요.')
+    st.caption('캘린더는 저장된 식단을 보여줘요. 다른 사람의 기록과 공유되지 않아요.')
 
 if navigation in ['📒 내 기록', '🛒 장보기 기록']:
     st.markdown('<div class="section-head"><h2>나의 식단 다이어리</h2><span>MY COLLECTION</span></div>',unsafe_allow_html=True)
@@ -182,9 +265,26 @@ if navigation in ['📒 내 기록', '🛒 장보기 기록']:
         with st.expander(label):
             st.write(f"**설정 예산** {int(rec.get('budget',0)):,}원  |  **인원** {rec.get('household',1)}명")
             if navigation=='📒 내 기록':
+                dated=record_calendar(rec)
+                if dated:
+                    st.markdown(calendar_html(dated, dated[0][0]), unsafe_allow_html=True)
                 for i,meal in enumerate(rec['meals']):show_meal(meal,i)
             if navigation=='🛒 장보기 기록':
-                show_shopping(rec['shopping'])
+                st.markdown('**🛒 장보기 체크리스트**')
+                progress_slot=st.empty()
+                for idx,row in enumerate(rec.get('shopping', [])):
+                    key=item_key(row,idx)
+                    already=key in {x for x in rec.get('checked_items',[]) if isinstance(x,str)}
+                    name=str(row.get('품목') or row.get('display_name') or f'{idx+1}번 품목')
+                    cost=float(row.get('예상비용_원') or 0)
+                    picked=st.checkbox(f'{name} · 예상 {cost:,.0f}원',value=already,key=f'shop_{rid}_{idx}')
+                    if picked!=already:
+                        update_record(rid,toggle_item(rec,key,picked))
+                        rec=next(x for x in st.session_state.history if x['id']==rid)
+                done,total=shopping_progress(rec)
+                progress_slot.progress(done / total if total else 1.0, text=f'구매 체크 {done}/{total}개')
+                with st.expander('품목별 예상량과 가격 상세'):
+                    show_shopping(rec['shopping'])
                 if rec.get('purchased_at'):
                     st.caption(f"장보기 완료 표시: {rec['purchased_at']}")
             c1,c2=st.columns(2)
@@ -192,11 +292,11 @@ if navigation in ['📒 내 기록', '🛒 장보기 기록']:
                 if rec.get('status')!='purchased' and st.button('✅ 장보기 완료로 표시',key=f'bought_{rid}',use_container_width=True):
                     new=[mark_purchased(x) if x['id']==rid else x for x in st.session_state.history]
                     store_history(new)
-                    st.rerun()
+                    st.success('기록을 수정했어요. 다른 메뉴로 이동하면 목록에 반영됩니다.')
             with c2:
                 if st.button('🗑️ 이 기록 삭제',key=f'del_{rid}',use_container_width=True):
                     store_history([x for x in st.session_state.history if x['id']!=rid])
-                    st.rerun()
+                    st.success('기록을 수정했어요. 다른 메뉴로 이동하면 목록에 반영됩니다.')
     if records:
         st.download_button('⬇️ 나의 전체 기록 백업 (JSON)',history_json(records),file_name='bowlly_history.json',mime='application/json',use_container_width=True)
     if navigation=='📒 내 기록':
