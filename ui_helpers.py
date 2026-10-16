@@ -4,7 +4,7 @@ No recipe instructions are fabricated: links open an external recipe search.
 History payloads contain only the current browser user's selections.
 """
 import json
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
@@ -58,7 +58,65 @@ def merge_history(existing, incoming):
     return read_history(list(merged.values()))
 
 
-def create_record(result, budget, household, meal_count, now=None):
+def meal_dates(start_date, meal_count):
+    """Assign meals to consecutive dates starting from the chosen date."""
+    if isinstance(start_date, str):
+        start_date = date.fromisoformat(start_date)
+    if isinstance(start_date, datetime):
+        start_date = start_date.date()
+    if not isinstance(start_date, date):
+        raise ValueError('식단 시작 날짜를 확인해주세요.')
+    return [(start_date + timedelta(days=i)).isoformat() for i in range(meal_count)]
+
+
+def record_dates(record):
+    """Support records created before calendar dates existed."""
+    meals = record.get('meals') or []
+    stored = record.get('meal_dates')
+    if isinstance(stored, list) and len(stored) == len(meals):
+        try:
+            return [date.fromisoformat(x).isoformat() for x in stored]
+        except (TypeError, ValueError):
+            pass
+    origin = record.get('planned_start') or str(record.get('created_at', ''))[:10].replace('.', '-')
+    try:
+        return meal_dates(origin, len(meals))
+    except (TypeError, ValueError):
+        return []
+
+
+def item_key(row, index):
+    """Stable shopping item identity including row number."""
+    return f"{index}:{str(row.get('price_key') or row.get('품목') or 'item')}"
+
+
+def checked_item_keys(record):
+    saved = record.get('checked_items', [])
+    if not isinstance(saved, list):
+        return set()
+    valid = {item_key(row, i) for i, row in enumerate(record.get('shopping', []))}
+    return {str(x) for x in saved} & valid
+
+
+def toggle_item(record, key, checked):
+    updated = dict(record)
+    selected = checked_item_keys(record)
+    valid = {item_key(row, i) for i, row in enumerate(record.get('shopping', []))}
+    if key not in valid:
+        return updated
+    if checked:
+        selected.add(key)
+    else:
+        selected.discard(key)
+    updated['checked_items'] = sorted(selected)
+    return updated
+
+
+def shopping_progress(record):
+    return len(checked_item_keys(record)), len(record.get('shopping', []))
+
+
+def create_record(result, budget, household, meal_count, now=None, start_date=None):
     now = now or datetime.now(KST)
     selected = []
     for r in result["selected"]:
@@ -71,10 +129,15 @@ def create_record(result, budget, household, meal_count, now=None):
             "protein_g": round(float(r.get("protein_g", 0)), 1),
             "sodium_mg": round(float(r.get("sodium_mg", 0)), 1),
         })
+    if start_date is None:
+        start_date = now.date()
+    planned = meal_dates(start_date, len(selected))
     shopping = json.loads(result["shopping"].to_json(orient="records", force_ascii=False))
     return {
         "id": now.strftime("%Y%m%d%H%M%S%f"),
         "created_at": now.strftime("%Y.%m.%d %H:%M"),
+        "planned_start": planned[0] if planned else str(start_date),
+        "meal_dates": planned,
         "budget": int(budget),
         "household": int(household),
         "meal_count": int(meal_count),
@@ -83,6 +146,7 @@ def create_record(result, budget, household, meal_count, now=None):
         "candidate_count": int(result.get("candidate_count", 0)),
         "meals": selected,
         "shopping": shopping,
+        "checked_items": [],
         "status": "planned",
         "purchased_at": None,
     }
