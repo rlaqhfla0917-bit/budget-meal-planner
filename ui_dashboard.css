@@ -20,3 +20,16 @@ html,body,[class*="css"]{font-family:'DM Sans','Noto Sans KR',sans-serif!importa
 [data-testid="stDownloadButton"] button{border-radius:12px!important;background:#efe5dd!important;color:#765346!important;border-color:#dfcebf!important;font-weight:750!important}.stButton button[kind="primary"]{background:#bf9282!important;color:white!important;border:0!important;border-radius:12px!important;font-weight:800!important}.stButton button{border-radius:12px!important}
 [data-testid="stDataFrame"]{border-radius:14px;overflow:hidden}.footer{border-top:1px solid #e9dbce;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:21px 0;color:#aa9589;font-size:.75rem;margin-top:35px}
 @media(max-width:730px){.block-container{padding:1rem 1rem 3rem!important}.top-note{display:none}.welcome{grid-template-columns:1fr}.welcome>div:first-child{padding:31px 27px}.welcome h1{font-size:2rem}.welcome-image{min-height:170px}.welcome-image:before{display:none}.summary-grid{grid-template-columns:1fr}.section-head h2{font-size:1.11rem!important}.part{grid-template-columns:69px 1fr}}
+
+/* Saved meal calendar: desktop seven-day strip, readable on small screens. */
+.weekly-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;margin:15px 0 20px}
+.day-cell{min-height:134px;background:#fffdfa;border:1px solid #ece5dc;border-radius:17px;padding:13px 10px;box-shadow:0 4px 10px rgba(79,49,37,.025);overflow:hidden}
+.day-cell.planned{background:#fff3e9;border-color:#ead6c5}
+.day-week{font-size:.75rem;font-weight:800;color:#a28b7c;display:block;line-height:1.1}
+.day-cell>strong{color:#5d4136;font-size:1.24rem;display:block;margin:7px 0 11px;font-weight:800}
+.day-meal{background:#fff;border:1px solid #f1e8dc;border-radius:9px;padding:8px 7px;margin:6px 0;overflow:hidden;min-width:0}
+.day-meal b{color:#583a31;display:block;font-size:.7rem;font-weight:800;word-break:keep-all;line-height:1.4}
+.day-meal small{display:block;color:#a29085;font-size:.67rem;margin-top:4px;word-break:keep-all}
+.day-empty{font-size:.7rem;color:#b0a49a;line-height:1.6;white-space:normal}
+@media (max-width:1030px){.weekly-calendar{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (max-width:640px){.weekly-calendar{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.day-cell{min-height:116px;padding:12px}}
