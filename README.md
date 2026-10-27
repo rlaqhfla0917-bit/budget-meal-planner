@@ -21,15 +21,11 @@ python -m unittest discover -s tests -v
 python demo.py
 ```
 
-로컬 추천 엔진 자동 테스트 11개 통과(2026-10-15). 웹 UI 및 공개 URL은 배포 후 별도 확인이 필요합니다.
+로컬 추천 엔진 자동 테스트 11개 통과(2026-10-15). 공개 앱의 현재 실행 범위는 배포본에서 확인할 수 있습니다.
 
-## Streamlit Cloud 배포
-저장소 최상위에 `app.py`, `core.py`, `demo.py`, `requirements.txt`, `runtime.txt`, `.streamlit/config.toml`, `data/`, `tests/`가 모두 있는지 확인하세요.
+## Streamlit Cloud 공개 배포
 
-1. https://share.streamlit.io/ 접속 후 **Create app** → **Deploy a public app from GitHub**
-2. Repository: `rlaqhfla0917-bit/budget-meal-planner`
-3. Branch: `main`, Main file path: `app.py`
-4. 공개 URL에서 5끼·7끼 추천, 보유재료 없음, 엄격한 조건, CSV 다운로드 등 재검증
+공개 앱 배포를 2026-10-15에 완료했습니다. 추천 엔진은 로컬에서 자동 테스트 11개를 통과했습니다. 추천 후보는 엄격한 가격 검증을 통과한 36개 메뉴와 2,916개 조합입니다.
 
 ## 범위·한계
 - 엄격한 가격 검증을 통과한 **36개 메뉴 / 2,916개 조합**을 대상으로 하는 MVP입니다.
@@ -37,4 +33,3 @@ python demo.py
 - 공공가격으로 계산한 **예상 장보기비**이며 실제 마트 결제액과 다를 수 있습니다.
 - 일부 식재료 보유 가정이나 중량 단가가 적용될 수 있습니다.
 - 의료·영양 처방용 서비스가 아니며 사용자가 선택한 조건을 계산합니다.
-- Streamlit Cloud 공개 배포를 2026-10-15에 완료했습니다. 현재 저장소의 추천 범위는 가격 검증을 통과한 36개 메뉴와 2,916개 조합입니다.
