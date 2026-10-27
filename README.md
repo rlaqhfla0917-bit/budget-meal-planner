@@ -21,7 +21,7 @@ python -m unittest discover -s tests -v
 python demo.py
 ```
 
-로컬 추천 엔진 자동 테스트 11개 통과(2026-10-15). 공개 앱의 현재 실행 범위는 배포본에서 확인할 수 있습니다.
+추천 엔진 테스트는 위 명령으로 다시 실행할 수 있습니다.
 
 ## Streamlit Cloud 공개 배포
 
